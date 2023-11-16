@@ -9,9 +9,11 @@ Next steps:
     - [X] Do something similar for simplified version of the elements
     - We send the simplified view, list of these elements to GPT.
     - GPT responds with ACTION and ID.
+    - Create a runner loop to refresh buffer elements on each page load.
     - Where ACTION corresponds to actions we've implemented.
-    - We perform the action on an element by grabbing it from our struct.
-    - Since the struct contains `Locator`s, we can do the action on it directly using Playwright.
+        - [X]: implement different actions (CLICK, TYPE, ENTER/SUBMIT)
+    - [X] We perform the action on an element by grabbing it from our struct.
+    - [X] Since the struct contains `Locator`s, we can do the action on it directly using Playwright.
 
 Later:
     - Internal monologue.
@@ -169,6 +171,7 @@ class Crawler:
 
     def add_elements_to_buffer(self):
         page_html = self.page.query_selector("body")
+        print(page_html.text_content)
         links = page_html.query_selector_all("a")
         buttons = page_html.query_selector_all("button")
         images = page_html.query_selector_all("img")
@@ -211,20 +214,47 @@ class Crawler:
             t6 = input.get_attribute("name")
             if t5 == "hidden": continue;
 
-            print(t1, t2, t3, t4, t5, t6)
             text = t1 if t1 else " " + t2 if t2 else " " + t3 if t3 else " " + t4 if t4 else " " + t5 if t5 else " " + t6 if t6 else " "
 
             self.elements_buffer[i] = input
             self.simplified_elements_buffer[i] = "<input id={0} alt=\"{1}\" />".format(i, text)
             i += 1
 
+    def refresh_elements_buffer(self):
+        self.elements_buffer = {}
+        self.simplified_elements_buffer = {}
+        self.add_elements_to_buffer()
+
+    def click(self, id: int):
+        self.elements_buffer[id].click()
+
+    def type_text(self, id: int, text: str):
+        self.elements_buffer[id].fill(text)
+        self.elements_buffer[id].press("Enter")
+
 if __name__ == "__main__":
     crawler = Crawler()
     crawler.go_to_page("https://wikipedia.com")
     crawler.add_elements_to_buffer()
 
-    for i in (crawler.simplified_elements_buffer.values()):
-        print(i)
+    while True:
 
-    sleep(5)
+        for i in (crawler.simplified_elements_buffer.values()):
+            print(i)
+
+        id = int(input("Enter id: "))
+        if id == -1:
+            print("Quitting...")
+            break
+
+        q = str(input("Enter query (if any): "))
+        if q == "":
+            crawler.click(id)
+        else: crawler.type_text(id, q)
+
+        sleep(5)
+
+        crawler.refresh_elements_buffer()
+        print("Crawling page...\n---------------------------------------------\n\n\n")
+
     crawler.browser.close()
