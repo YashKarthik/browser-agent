@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from playwright.sync_api import sync_playwright, Locator, ElementHandle
 import openai
 from time import sleep
@@ -171,7 +171,10 @@ class Crawler:
 
     def add_elements_to_buffer(self):
         page_html = self.page.query_selector("body")
-        print(page_html.text_content)
+        if page_html is None:
+            print("page_html is None")
+            exit(1)
+
         links = page_html.query_selector_all("a")
         buttons = page_html.query_selector_all("button")
         images = page_html.query_selector_all("img")
@@ -221,8 +224,8 @@ class Crawler:
             i += 1
 
     def refresh_elements_buffer(self):
-        self.elements_buffer = {}
-        self.simplified_elements_buffer = {}
+        self.elements_buffer.clear()
+        self.simplified_elements_buffer.clear()
         self.add_elements_to_buffer()
 
     def click(self, id: int):
@@ -242,6 +245,7 @@ if __name__ == "__main__":
         for i in (crawler.simplified_elements_buffer.values()):
             print(i)
 
+        print("\n")
         id = int(input("Enter id: "))
         if id == -1:
             print("Quitting...")
@@ -252,9 +256,8 @@ if __name__ == "__main__":
             crawler.click(id)
         else: crawler.type_text(id, q)
 
-        sleep(5)
-
-        crawler.refresh_elements_buffer()
         print("Crawling page...\n---------------------------------------------\n\n\n")
+        sleep(7)
+        crawler.refresh_elements_buffer()
 
     crawler.browser.close()
