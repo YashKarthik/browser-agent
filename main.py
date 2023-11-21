@@ -171,6 +171,7 @@ class Crawler:
 
     def add_elements_to_buffer(self):
         page_html = self.page.query_selector("body")
+
         if page_html is None:
             print("page_html is None")
             exit(1)
